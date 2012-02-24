@@ -114,5 +114,5 @@
 		"usb start; " \
 		"run usb_boot; " \
 	\
-	"board=ventanta\0"
+	"board=picasso\0"
 #endif /* __CONFIG_H */
