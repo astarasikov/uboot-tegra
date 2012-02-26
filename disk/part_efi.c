@@ -210,6 +210,11 @@ failure:
 
 int test_part_efi(block_dev_desc_t * dev_desc)
 {
+
+#ifdef CONFIG_EFI_SKIP_MBR
+	return 0;
+#endif
+
 	legacy_mbr *legacymbr = memalign(CACHE_LINE_SIZE, sizeof(legacy_mbr));
 	int err = 0;
 
