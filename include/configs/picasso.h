@@ -98,10 +98,10 @@
 		"run regen_all; "\
 		"echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"if ext2load ${devtype} ${devnum}:${kernpart} " \
+		"if ext2load ${devtype} ${devnum}:${kernel_part} " \
 		            "${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr};" \
-		"elif fatload ${devtype} ${devnum}:${kernpart} " \
+		"elif fatload ${devtype} ${devnum}:${kernel_part} " \
 		            "${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr};" \
 		"fi\0" \
