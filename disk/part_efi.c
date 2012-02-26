@@ -103,6 +103,21 @@ static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 
 static int is_pte_valid(gpt_entry * pte);
 
+static inline int try_find_gpt(block_dev_desc_t * dev_desc,
+				gpt_header * pgpt_head, gpt_entry ** pgpt_pte) {
+	
+	unsigned long long lba = GPT_PRIMARY_PARTITION_TABLE_LBA;
+	
+	if (is_gpt_valid(dev_desc, lba, pgpt_head, pgpt_pte) == 1)
+		return 1;
+
+	if (is_gpt_valid(dev_desc, dev_desc->lba - 4097, pgpt_head, pgpt_pte) == 1) {
+		return 1;
+	}
+	
+	return 0;
+}
+
 /*
  * Public Functions (include/part.h)
  */
@@ -122,9 +137,9 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 		printf("%s: Invalid Argument(s)\n", __FUNCTION__);
 		goto failure;
 	}
-	/* This function validates AND fills in the GPT header and PTE */
-	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			 gpt_head, pgpt_pte) != 1) {
+	
+	/* This function looks for a GPT table and fills the GPT header and PTE*/
+	if (try_find_gpt(dev_desc, gpt_head, pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		goto failure;
 	}
@@ -175,13 +190,14 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 		goto failure;
 	}
 
-	/* This function validates AND fills in the GPT header and PTE */
-	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			 gpt_head, pgpt_pte) != 1) {
+	/* This function looks for a GPT table and fills the GPT header and PTE*/
+	if (try_find_gpt(dev_desc, gpt_head, pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		err = -1;
 		goto failure;
 	}
+
+	/* This function validates AND fills in the GPT header and PTE */
 
 	/* The ulong casting limits the maximum disk size to 2 TB */
 	info->start = (ulong) le64_to_int((*pgpt_pte)[part - 1].starting_lba);
