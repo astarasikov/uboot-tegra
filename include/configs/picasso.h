@@ -81,31 +81,60 @@
 	CONFIG_EXT2_BOOT_HELPER_SETTINGS\
 	CONFIG_NETBOOT_SETTINGS \
 	\
+	"kernel_name=/boot/vmlinux.uimg\0"\
+	\
+	"run_disk_boot_script=" \
+		"if ext2load ${devtype} ${devnum}:${script_part} " \
+				"${loadaddr} ${script_img}; then " \
+			"source ${loadaddr}; " \
+		"elif fatload ${devtype} ${devnum}:${script_part} " \
+				"${loadaddr} ${script_img}; then " \
+			"source ${loadaddr}; " \
+		"fi\0" \
+	\
+	"real_boot="\
+		"setenv bootdev_bootargs "\
+			"root=/dev/${devname}${rootpart} rootwait ro; "\
+		"run regen_all; "\
+		"echo Load Address:${loadaddr};" \
+		"echo Cmdline:${bootargs}; " \
+		"if ext2load ${devtype} ${devnum}:${kernpart} " \
+		            "${loadaddr} ${kernel_name}; then " \
+			"bootm ${loadaddr};" \
+		"elif fatload ${devtype} ${devnum}:${kernpart} " \
+		            "${loadaddr} ${kernel_name}; then " \
+			"bootm ${loadaddr};" \
+		"fi\0" \
+	\
 	"usb_boot=setenv devtype usb; " \
 		"setenv devnum 0; " \
 		"setenv devname sda; " \
-		"setenv script_part 1; "\
 		"run run_disk_boot_script;" \
-		"run ext2_boot\0" \
+		"run real_boot\0" \
 	\
 	"mmc_boot=mmc rescan ${devnum}; " \
 		"setenv devtype mmc; " \
 		"setenv devname mmcblk${devnum}p; " \
-		"run run_disk_boot_script;" \
-		"echo Load Address:${loadaddr};" \
-		"echo Cmdline:${bootargs}; " \
-		"run ext2_boot\0" \
+		"run run_disk_boot_script; " \
+		"run real_boot\0" \
+	\
 	"emmc_boot=setenv devnum 0; " \
-		"setenv script_part 1; " \
+		"setenv script_part 3; " \
+		"setenv kernel_part 3; " \
 		"setenv rootpart 3; " \
 		"run mmc_boot\0" \
+	\
 	"microsd_boot=setenv devnum 1; " \
 		"setenv script_part 1; " \
+		"setenv kernel_part 1; " \
 		"setenv rootpart 2; " \
 		"run mmc_boot\0" \
 	\
 	"non_verified_boot=" \
 		"setenv dev_extras video=tegrafb console=tty0; "\
+		"setenv script_part 1; "\
+		"setenv kernpart 1; "\
+		"setenv rootpart 1; "\
 		"usb start; " \
 		"run usb_boot; " \
 		"run microsd_boot; " \
