@@ -131,7 +131,7 @@
 		"run mmc_boot\0" \
 	\
 	"non_verified_boot=" \
-		"setenv dev_extras video=tegrafb console=tty0; "\
+		"setenv dev_extras video=tegrafb console=tty0 --no-log; "\
 		"setenv script_part 1; "\
 		"setenv kernpart 1; "\
 		"setenv rootpart 1; "\
