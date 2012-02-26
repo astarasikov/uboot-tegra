@@ -15,11 +15,11 @@
 
 	aliases {
 		console = "/serial@70006300";
-                usb0 = "/usb@0xc5008000";
-                usb1 = "/usb@0xc5000000";
+			usb0 = "/usb@0xc5008000";
+			usb1 = "/usb@0xc5000000";
 
-                sdmmc0 = "/sdhci@c8000600";
-                sdmmc1 = "/sdhci@c8000400";
+			sdmmc0 = "/sdhci@c8000600";
+			sdmmc1 = "/sdhci@c8000400";
 	};
 
 	chosen {
@@ -38,17 +38,17 @@
 
 	sdhci@c8000400 {
 		status = "ok";
-                width = <4>;	/* width of SDIO port */
-                removable = <1>;
-                /* Parameter 3 bit 0:1=output, 0=input; bit 1:1=high, 0=low */
-                cd-gpio = <&gpio 69 0>; /* card detect, gpio PI5 */
-                power-gpio = <&gpio 70 3>; /* power enable, gpio PI6 */
+		width = <4>;	/* width of SDIO port */
+		removable = <1>;
+		/* Parameter 3 bit 0:1=output, 0=input; bit 1:1=high, 0=low */
+		cd-gpio = <&gpio 69 0>; /* card detect, gpio PI5 */
+		power-gpio = <&gpio 70 3>; /* power enable, gpio PI6 */
 	};
 
 	sdhci@c8000600 {
 		status = "ok";
-                width = <8>;	/* width of SDIO port */
-                removable = <0>;
+		width = <4>;	/* width of SDIO port */
+		removable = <0>;
 	};
 
 	usb@0xc5000000 {
