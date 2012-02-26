@@ -133,7 +133,7 @@
 	"non_verified_boot=" \
 		"setenv dev_extras video=tegrafb console=tty0 --no-log; "\
 		"setenv script_part 1; "\
-		"setenv kernpart 1; "\
+		"setenv kernel_part 1; "\
 		"setenv rootpart 1; "\
 		"usb start; " \
 		"run usb_boot; " \
