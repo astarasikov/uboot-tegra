@@ -51,6 +51,7 @@
 
 #define CONFIG_DOS_PARTITION
 #define CONFIG_EFI_PARTITION
+#define CONFIG_EFI_SKIP_MBR
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
 
@@ -88,7 +89,15 @@
 	"fat_boot=" \
 		"setenv bootdev_bootargs " \
 			"root=/dev/${devname}${rootpart} rootwait ro; " \
-		"if fatload ${devtype} ${devnum}:${script_part} " \
+		"if ext2load ${devtype} ${devnum}:${script_part} " \
+				"${loadaddr} /uImage; then " \
+			"bootm ${loadaddr};" \
+		"fi\0" \
+	\
+	"ext4_boot=" \
+		"setenv bootdev_bootargs " \
+			"root=/dev/${devname}${rootpart} rootwait ro; " \
+		"if ext2load ${devtype} ${devnum}:${script_part} " \
 				"${loadaddr} /uImage; then " \
 			"bootm ${loadaddr};" \
 		"fi\0" \
@@ -99,8 +108,10 @@
 		"run run_disk_boot_script;" \
 		"echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"run fat_boot\0" \
+		"run ext4_boot\0" \
 	"mmc0_boot=setenv devnum 0; " \
+		"setenv script_part 8; " \
+		"setenv rootpart 2; " \
 		"run mmc_boot\0" \
 	"mmc1_boot=setenv devnum 1; " \
 		"setenv script_part 1; " \
@@ -110,6 +121,7 @@
 	"non_verified_boot=" \
 		"setenv dev_extras video=tegrafb console=tty0; "\
 		"setenv script_part 1; "\
+		"run mmc0_boot; " \
 		"run mmc1_boot; " \
 		"usb start; " \
 		"run usb_boot; " \
