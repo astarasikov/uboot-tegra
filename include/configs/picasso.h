@@ -84,24 +84,9 @@
 	"usb_boot=setenv devtype usb; " \
 		"setenv devnum 0; " \
 		"setenv devname sda; " \
+		"setenv script_part 1; "\
 		"run run_disk_boot_script;" \
 		"run ext2_boot\0" \
-	\
-	"fat_boot=" \
-		"setenv bootdev_bootargs " \
-			"root=/dev/${devname}${rootpart} rootwait ro; " \
-		"if ext2load ${devtype} ${devnum}:${script_part} " \
-				"${loadaddr} /uImage; then " \
-			"bootm ${loadaddr};" \
-		"fi\0" \
-	\
-	"ext4_boot=" \
-		"setenv bootdev_bootargs " \
-			"root=/dev/${devname}${rootpart} rootwait ro; " \
-		"if ext2load ${devtype} ${devnum}:${script_part} " \
-				"${loadaddr} /uImage; then " \
-			"bootm ${loadaddr};" \
-		"fi\0" \
 	\
 	"mmc_boot=mmc rescan ${devnum}; " \
 		"setenv devtype mmc; " \
@@ -109,23 +94,22 @@
 		"run run_disk_boot_script;" \
 		"echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"run ext4_boot\0" \
-	"mmc0_boot=setenv devnum 0; " \
-		"setenv script_part 8; " \
-		"setenv rootpart 2; " \
+		"run ext2_boot\0" \
+	"emmc_boot=setenv devnum 0; " \
+		"setenv script_part 1; " \
+		"setenv rootpart 3; " \
 		"run mmc_boot\0" \
-	"mmc1_boot=setenv devnum 1; " \
+	"microsd_boot=setenv devnum 1; " \
 		"setenv script_part 1; " \
 		"setenv rootpart 2; " \
 		"run mmc_boot\0" \
 	\
 	"non_verified_boot=" \
 		"setenv dev_extras video=tegrafb console=tty0; "\
-		"setenv script_part 1; "\
-		"run mmc0_boot; " \
-		"run mmc1_boot; " \
 		"usb start; " \
 		"run usb_boot; " \
+		"run microsd_boot; " \
+		"run emmc_boot; " \
 	\
 	"board=picasso\0"
 #endif /* __CONFIG_H */
