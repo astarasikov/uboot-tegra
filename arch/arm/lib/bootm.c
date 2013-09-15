@@ -8,6 +8,9 @@
  * Marius Groeger <mgroeger@sysgo.de>
  *
  * Copyright (C) 2001  Erik Mouw (J.A.K.Mouw@its.tudelft.nl)
+ * HYP entry (C) 2012  Ian Molton <ian.molton@codethink.co.uk>
+ *                and  Clemens Fischer <clemens.fischer@h-da.de>
+ *           (C) 2013 Alexander Tarasikov <alexander.tarasikov@gmail.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -25,6 +28,89 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct tag *params;
+
+/*
+ * function called by cpu 1 after wakeup
+ */
+extern void __hyp_init_sec(void);
+
+asm (
+	".pushsection .text\n"
+	".global __hyp_init_sec\n"
+	"__hyp_init_sec:\n"
+		"ldr r12, =0x102\n"
+		"adr r0, hyp_init_cont\n"
+		"dsb\n"
+		"isb\n"
+		"dmb\n"
+		"smc #0\n"
+		"hyp_init_cont: ldr r1, =0x48281800\n" // AUX_CORE_BOOT_0
+		"mov r2, #0\n"
+		"str r2, [r1, #4]\n"
+		"dsb\n"
+		"isb\n"
+		"dmb\n"
+		"wait: wfe\n"
+		"ldr r2, [r1, #4]\n"
+		"cmp r2, #0\n"
+		"movne pc, r2\n"
+		"b wait\n"
+	".popsection\n"
+);
+
+/*
+ * Enable HYP mode on the OMAP5 CPU
+ *
+ * FIXME: this needs to test to make sure its running on an OMAP5
+ *
+ * We wake up CPU1 at __hyp_init_sec which allows us to put it into HYP
+ * mode.
+ *
+ * CPU1 then clears AUX_CORE_BOOT_0 and enters WFE, until the kernel wakes it.
+ *
+ * In order to avoid CPU1 continuing execution on just about any event, we
+ * wait for AUX_CORE_BOOT_0 to contain a non-zero address, at which point
+ * we continue execution at that address.
+ *
+ */
+
+static void hyp_enable(void) {
+	 /*Wake up CPU1 and enable HYP on CPU0. */
+	asm(
+		"ldr r1, =0x48281800\n"     // AUX_CORE_BOOT_1
+		"ldr r2, =__hyp_init_sec\n"
+		"str r2, [r1, #4]\n"
+		"mov r2, #0x20\n"
+		"str r2, [r1]\n"            // AUX_CORE_BOOT_0
+		"isb\n"
+		"dmb\n"
+		"dsb\n"
+		"sev\n"                     // Wake CPU1
+		"adr r1, hyp_stack\n"
+		"stm r1, {r4-r14}\n" //save registers on the temporary stack
+		"ldr r12, =0x102\n" //start hypervisor SMC code
+		"adr r0, hyp_ena_cont\n" //address after SMC instruction
+		"dsb\n"
+		"isb\n"
+		"dmb\n"
+		"smc #0\n"                 // CPU0 -> HYP mode
+		"hyp_stack:\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		".word 0x0\n"
+		"hyp_ena_cont: adr r1,hyp_stack\n"
+		"ldm   r1, {r4-r14}\n"
+		:::"r0", "r1", "r2", "r3", "cc", "memory"
+	);
+};
 
 static ulong get_sp(void)
 {
@@ -144,7 +230,6 @@ static void setup_initrd_tag(bd_t *bd, ulong initrd_start, ulong initrd_end)
 
 	params->u.initrd.start = initrd_start;
 	params->u.initrd.size = initrd_end - initrd_start;
-
 	params = tag_next (params);
 }
 
@@ -185,7 +270,6 @@ __weak void setup_board_tags(struct tag **in_params) {}
 static void boot_prep_linux(bootm_headers_t *images)
 {
 	char *commandline = getenv("bootargs");
-
 	if (IMAGE_ENABLE_OF_LIBFDT && images->ft_len) {
 #ifdef CONFIG_OF_LIBFDT
 		debug("using: FDT\n");
@@ -246,6 +330,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	else
 		r2 = gd->bd->bi_boot_params;
 
+	hyp_enable();
 	if (!fake)
 		kernel_entry(0, machid, r2);
 }
